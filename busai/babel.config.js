@@ -1,0 +1,60 @@
+module.exports = function (api) {
+  api.cache(true);
+  return {
+    presets: ["babel-preset-expo"],
+    overrides: [
+      {
+        exclude: /node_modules/,
+        plugins: [
+          [
+            "react-native-iconify/babel",
+            {
+              entry: "app/_layout.tsx",
+              icons: [
+                "solar:magic-stick-3-bold",
+                "solar:magnifer-linear",
+                "solar:close-circle-bold",
+                "solar:map-point-linear",
+                "solar:bus-bold",
+                "solar:info-circle-linear",
+                "solar:gps-bold",
+                "solar:map-point-bold",
+                "solar:map-point-bold-duotone",
+                "solar:alt-arrow-left-linear",
+                "solar:alt-arrow-right-linear",
+                "solar:alt-arrow-up-linear",
+                "solar:alt-arrow-down-linear",
+                "solar:star-bold",
+                "solar:star-linear",
+                "solar:clock-circle-bold",
+                "solar:trash-bin-2-bold",
+                "solar:home-2-bold",
+                "solar:case-round-bold",
+                "solar:bookmark-linear",
+                "solar:bookmark-bold",
+                "solar:refresh-linear",
+                "solar:arrow-up-bold",
+                "solar:compass-bold",
+                "solar:compass-linear",
+                "solar:map-bold",
+                "solar:map-linear",
+                "solar:route-bold",
+                "solar:walking-bold",
+                "solar:play-bold",
+                "ph:bus-fill",
+                "material-symbols:navigation-rounded",
+                "material-symbols:accessible-rounded",
+                "solar:accessibility-linear",
+                "solar:clock-circle-linear",
+                "solar:tram-bold",
+                "solar:danger-triangle-bold",
+                "solar:bus-broken",
+                "solar:users-group-rounded-bold",
+              ],
+            },
+          ],
+        ],
+      },
+    ],
+  };
+};

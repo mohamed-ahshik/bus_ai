@@ -1,0 +1,45 @@
+{
+  "name": "busai",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@iconify-json/material-symbols": "^1.2.63",
+    "@iconify-json/ph": "^1.2.2",
+    "@iconify-json/solar": "^1.2.5",
+    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@tanstack/react-query": "^5.95.2",
+    "babel-preset-expo": "^55.0.12",
+    "expo": "~55.0.8",
+    "expo-constants": "~55.0.9",
+    "expo-dev-client": "~55.0.18",
+    "expo-linear-gradient": "~55.0.9",
+    "expo-linking": "~55.0.8",
+    "expo-location": "~55.1.4",
+    "expo-router": "~55.0.7",
+    "expo-status-bar": "~55.0.4",
+    "jszip": "^3.10.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-native": "0.83.2",
+    "react-native-iconify": "^2.0.3",
+    "react-native-maps": "^1.27.2",
+    "react-native-safe-area-context": "~5.6.2",
+    "react-native-screens": "~4.23.0",
+    "react-native-svg": "15.15.3",
+    "react-native-web": "~0.21.0",
+    "react-native-webview": "13.16.0",
+    "uniwind": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/google.maps": "^3.58.1",
+    "@types/react": "~19.2.2",
+    "typescript": "~5.9.2"
+  },
+  "private": true
+}
