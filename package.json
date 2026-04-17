@@ -1,0 +1,11 @@
+{
+  "name": "bus-ai",
+  "private": true,
+  "description": "Workspace root; the Expo app lives in ./busai",
+  "scripts": {
+    "start": "npm run start --prefix busai",
+    "android": "npm run android --prefix busai",
+    "ios": "npm run ios --prefix busai",
+    "web": "npm run web --prefix busai"
+  }
+}
