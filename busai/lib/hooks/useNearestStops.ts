@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import * as Location from "expo-location";
 import { useQuery } from "@tanstack/react-query";
 import type { BusStop } from "../types";
 import { getAllBusStops } from "../api/ltaBusStops";
+import { fetchNearbyBusStopsFromSupabase } from "../api/nearbyBusStopsSupabase";
 
 interface LocationState {
   latitude: number;
@@ -42,14 +43,21 @@ export function useNearestStops() {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
 
-  const updateLocation = useCallback(async () => {
+  const updateLocation = useCallback(async (): Promise<LocationState | null> => {
     setIsLocating(true);
     try {
       const loc = await fetchLocation();
       setLocation(loc);
+      return loc;
     } catch {
       setLocationError("Could not get location");
-      setLocation({ latitude: 1.3521, longitude: 103.8198, address: "Singapore" });
+      const fallback: LocationState = {
+        latitude: 1.3521,
+        longitude: 103.8198,
+        address: "Singapore",
+      };
+      setLocation(fallback);
+      return fallback;
     } finally {
       setIsLocating(false);
     }
@@ -73,6 +81,26 @@ export function useNearestStops() {
     enabled: !!location,
     queryFn: async () => {
       if (!location) return [];
+      const fromDb = await fetchNearbyBusStopsFromSupabase(
+        location.latitude,
+        location.longitude,
+        80,
+      );
+      if (fromDb?.length) {
+        return fromDb.map((stop) => ({
+          ...stop,
+          distance:
+            stop.distance ??
+            parseFloat(
+              haversineDistance(
+                location.latitude,
+                location.longitude,
+                stop.Latitude,
+                stop.Longitude,
+              ).toFixed(2),
+            ),
+        }));
+      }
       const allStops = await getAllBusStops();
       return allStops
         .map((stop) => ({
@@ -81,19 +109,24 @@ export function useNearestStops() {
             haversineDistance(location.latitude, location.longitude, stop.Latitude, stop.Longitude).toFixed(2)
           ),
         }))
-        .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0))
-        .slice(0, 6);
+        .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
     },
     staleTime: 60000,
   });
 
-  const refetch = useCallback(async () => {
-    await updateLocation();
+  const list = stops ?? [];
+  /** Nearest few for the scroll list + prefetch only (map uses full `stops`). */
+  const nearestStops = useMemo(() => list.slice(0, 6), [list]);
+
+  const refetch = useCallback(async (): Promise<LocationState | null> => {
+    const loc = await updateLocation();
     await refetchStops();
+    return loc;
   }, [updateLocation, refetchStops]);
 
   return {
-    stops: stops ?? [],
+    stops: list,
+    nearestStops,
     location,
     locationError,
     permissionGranted,

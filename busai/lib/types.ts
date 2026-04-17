@@ -77,6 +77,8 @@ export interface Bookmark {
   roadName: string;
   serviceNo?: string;
   direction?: string; // e.g. "To Bedok Int"
+  /** Route screen vs stop detail per-service bookmarks (affects grouping on Bookmarks tab). */
+  bookmarkOrigin?: "route" | "stop";
   createdAt: number;
 }
 

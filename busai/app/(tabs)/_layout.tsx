@@ -13,6 +13,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: "Nearby" }} />
       <Tabs.Screen name="bookmarks" options={{ title: "Bookmarks" }} />
       <Tabs.Screen name="map" options={{ title: "Map" }} />
+      <Tabs.Screen name="settings" options={{ title: "Settings" }} />
     </Tabs>
   );
 }

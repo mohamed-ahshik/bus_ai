@@ -11,7 +11,6 @@ module.exports = function (api) {
             {
               entry: "app/_layout.tsx",
               icons: [
-                "solar:magic-stick-3-bold",
                 "solar:magnifer-linear",
                 "solar:close-circle-bold",
                 "solar:map-point-linear",
@@ -24,6 +23,7 @@ module.exports = function (api) {
                 "solar:alt-arrow-right-linear",
                 "solar:alt-arrow-up-linear",
                 "solar:alt-arrow-down-linear",
+                "solar:arrow-left-up-linear",
                 "solar:star-bold",
                 "solar:star-linear",
                 "solar:clock-circle-bold",
@@ -37,6 +37,7 @@ module.exports = function (api) {
                 "solar:compass-bold",
                 "solar:compass-linear",
                 "solar:map-bold",
+                "solar:map-arrow-square-bold",
                 "solar:map-linear",
                 "solar:route-bold",
                 "solar:walking-bold",
@@ -44,6 +45,8 @@ module.exports = function (api) {
                 "ph:bus-fill",
                 "material-symbols:navigation-rounded",
                 "material-symbols:accessible-rounded",
+                "solar:settings-bold",
+                "solar:settings-linear",
                 "solar:accessibility-linear",
                 "solar:clock-circle-linear",
                 "solar:tram-bold",

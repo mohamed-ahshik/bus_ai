@@ -1,10 +1,24 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import type { ViewStyle } from "react-native";
 import MapView, { Marker, Polyline, Circle } from "react-native-maps";
+import type { ReactNode } from "react";
+import { SvgXml } from "react-native-svg";
 import { MAP_PROVIDER } from "../lib/mapConfig";
+import { mapPinSvgXml } from "../lib/mapPinSvg";
 
 export type LatLng = { latitude: number; longitude: number };
 export type Region = LatLng & { latitudeDelta: number; longitudeDelta: number };
+
+export type GoogleMapImperativeHandle = {
+  animateToRegion: (region: Region, duration?: number) => void;
+};
 
 export type MapMarker = {
   id: string;
@@ -12,6 +26,7 @@ export type MapMarker = {
   title?: string;
   description?: string;
   pinColor?: string;
+  children?: ReactNode;
   onPress?: () => void;
 };
 
@@ -43,20 +58,33 @@ type Props = {
   fitPadding?: { top: number; right: number; bottom: number; left: number };
 };
 
-export default function GoogleMap({
-  style,
-  region,
-  initialRegion,
-  markers = [],
-  polylines = [],
-  circles = [],
-  showsUserLocation = false,
-  showsMyLocationButton = false,
-  fitCoordinates,
-  fitPadding = { top: 80, right: 40, bottom: 320, left: 40 },
-}: Props) {
+const GoogleMap = forwardRef<GoogleMapImperativeHandle, Props>(function GoogleMap(
+  {
+    style,
+    region,
+    initialRegion,
+    markers = [],
+    polylines = [],
+    circles = [],
+    showsUserLocation = false,
+    showsMyLocationButton = false,
+    fitCoordinates,
+    fitPadding = { top: 80, right: 40, bottom: 320, left: 40 },
+  },
+  ref
+) {
   const [mapReady, setMapReady] = useState(false);
   const mapRef = useRef<MapView>(null);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      animateToRegion: (r: Region, duration = 300) => {
+        mapRef.current?.animateToRegion(r, duration);
+      },
+    }),
+    []
+  );
 
   const handleMapReady = useCallback(() => {
     setMapReady(true);
@@ -94,9 +122,16 @@ export default function GoogleMap({
           coordinate={m.coordinate}
           title={m.title}
           description={m.description}
-          pinColor={m.pinColor}
+          anchor={
+            m.children ? undefined : m.pinColor ? { x: 0.5, y: 1 } : undefined
+          }
           onPress={m.onPress}
-        />
+        >
+          {m.children ??
+            (m.pinColor ? (
+              <SvgXml xml={mapPinSvgXml(m.pinColor)} width={34} height={34} />
+            ) : null)}
+        </Marker>
       ))}
       {polylines.map((p, i) => (
         <Polyline
@@ -119,4 +154,6 @@ export default function GoogleMap({
       ))}
     </MapView>
   );
-}
+});
+
+export default GoogleMap;

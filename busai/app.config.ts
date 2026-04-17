@@ -2,17 +2,18 @@ import { ExpoConfig, ConfigContext } from "expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: "OmniBus AI",
+  name: "SG Bus Flow",
   slug: "busai",
+  owner: "mohamed-ahshik",
   version: "1.0.0",
   scheme: "busai",
   orientation: "portrait",
   icon: "./assets/icon.png",
-  userInterfaceStyle: "light",
+  userInterfaceStyle: "automatic",
   splash: {
     image: "./assets/splash-icon.png",
     resizeMode: "contain",
-    backgroundColor: "#ffffff",
+    backgroundColor: "#000000",
   },
   ios: {
     supportsTablet: true,
@@ -43,7 +44,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       "expo-location",
       {
         locationWhenInUsePermission:
-          "OmniBus AI needs your location to find nearby bus stops.",
+          "SG Bus Flow needs your location to find nearby bus stops.",
       },
     ],
     [
@@ -51,6 +52,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         androidGoogleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
         iosGoogleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
+      },
+    ],
+    [
+      "react-native-google-mobile-ads",
+      {
+        androidAppId: "ca-app-pub-2348383927263826~5682267789",
+        // Replace with your AdMob iOS app ID when you register the iOS app; sample ID avoids a missing plist crash in dev.
+        iosAppId: "ca-app-pub-3940256099942544~1458002511",
       },
     ],
   ],

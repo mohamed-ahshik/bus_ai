@@ -1,0 +1,20 @@
+# Run `supabase link` to bind your project.
+# Invoke without user JWT; protect with SYNC_BUS_ROUTES_SECRET in production.
+
+[functions.sync-bus-routes]
+verify_jwt = false
+
+[functions.destination-weather]
+verify_jwt = false
+
+[functions.lta-bus-stops]
+verify_jwt = false
+
+[functions.lta-bus-arrival]
+verify_jwt = false
+
+[functions.lta-train-service-alerts]
+verify_jwt = false
+
+[functions.lta-bus-routes]
+verify_jwt = false

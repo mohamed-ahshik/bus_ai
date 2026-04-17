@@ -1,11 +1,16 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { BusStop } from "../types";
+import { logPayloadLocal, utf8JsonBytes } from "../payloadLog";
 
 const API_URL = "https://datamall2.mytransport.sg/ltaodataservice/BusStops";
 const API_KEY = process.env.EXPO_PUBLIC_LTA_DATAMALL_KEY ?? "";
 const CACHE_KEY = "lta_bus_stops_v1";
-const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+/** Full catalog is large; long TTL avoids repeat downloads (default 7 days). */
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const PAGE_SIZE = 500;
+
+/** Single in-flight full-catalog fetch (home tab can call `getAllBusStops` from multiple hooks). */
+let inFlightCatalog: Promise<BusStop[]> | null = null;
 
 interface LTABusStopRecord {
   BusStopCode: string;
@@ -28,6 +33,8 @@ interface CachedData {
 async function fetchAllPages(): Promise<BusStop[]> {
   const allStops: BusStop[] = [];
   let skip = 0;
+  let pages = 0;
+  let upstreamJsonUtf8Bytes = 0;
 
   while (true) {
     const res = await fetch(`${API_URL}?$skip=${skip}`, {
@@ -39,6 +46,8 @@ async function fetchAllPages(): Promise<BusStop[]> {
     }
 
     const data: LTAResponse = await res.json();
+    upstreamJsonUtf8Bytes += utf8JsonBytes(data);
+    pages += 1;
     const records = data.value;
 
     if (!records || records.length === 0) break;
@@ -57,6 +66,14 @@ async function fetchAllPages(): Promise<BusStop[]> {
     skip += PAGE_SIZE;
   }
 
+  logPayloadLocal("getAllBusStops.fetch", {
+    transport: "lta_direct",
+    pages,
+    upstreamJsonUtf8Bytes,
+    stopCount: allStops.length,
+    normalizedStopsJsonUtf8Bytes: utf8JsonBytes(allStops),
+  });
+
   return allStops;
 }
 
@@ -66,6 +83,11 @@ export async function getAllBusStops(): Promise<BusStop[]> {
     if (cached) {
       const parsed: CachedData = JSON.parse(cached);
       if (Date.now() - parsed.timestamp < CACHE_TTL_MS) {
+        logPayloadLocal("getAllBusStops", {
+          source: "async_storage_cache",
+          stopCount: parsed.stops.length,
+          normalizedStopsJsonUtf8Bytes: utf8JsonBytes(parsed.stops),
+        });
         return parsed.stops;
       }
     }
@@ -76,12 +98,18 @@ export async function getAllBusStops(): Promise<BusStop[]> {
     return [];
   }
 
-  const stops = await fetchAllPages();
+  if (!inFlightCatalog) {
+    inFlightCatalog = (async () => {
+      const fetched = await fetchAllPages();
+      try {
+        const toCache: CachedData = { timestamp: Date.now(), stops: fetched };
+        await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(toCache));
+      } catch {}
+      return fetched;
+    })().finally(() => {
+      inFlightCatalog = null;
+    });
+  }
 
-  try {
-    const toCache: CachedData = { timestamp: Date.now(), stops };
-    await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(toCache));
-  } catch {}
-
-  return stops;
+  return inFlightCatalog;
 }

@@ -3,6 +3,8 @@ import { View, Pressable } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Iconify } from "react-native-iconify";
+import { useAppTheme } from "../lib/ThemeContext";
+import { ROOT_BANNER_STRIP_RESERVE_PX } from "../lib/adMobConfig";
 
 const TABS = [
   {
@@ -20,19 +22,22 @@ const TABS = [
     activeIcon: "solar:map-bold",
     inactiveIcon: "solar:map-linear",
   },
+  {
+    name: "settings",
+    activeIcon: "solar:settings-bold",
+    inactiveIcon: "solar:settings-linear",
+  },
 ];
-
-const PRIMARY = "#2e7d32";
-const WHITE = "#ffffff";
 
 export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const { colors } = useAppTheme();
 
   return (
     <View
       style={{
         position: "absolute",
-        bottom: insets.bottom + 16,
+        bottom: insets.bottom + 16 + ROOT_BANNER_STRIP_RESERVE_PX,
         left: 0,
         right: 0,
         alignItems: "center",
@@ -41,7 +46,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     >
       <View
         style={{
-          backgroundColor: WHITE,
+          backgroundColor: colors.surface,
           borderRadius: 999,
           flexDirection: "row",
           alignItems: "center",
@@ -56,7 +61,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
           shadowRadius: 16,
           elevation: 8,
           borderWidth: 1,
-          borderColor: "#eeeeee",
+          borderColor: colors.border,
         }}
       >
         {TABS.map((tab, index) => {
@@ -82,7 +87,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
                 flex: 1,
                 height: "100%",
                 borderRadius: 999,
-                backgroundColor: isFocused ? PRIMARY : "transparent",
+                backgroundColor: isFocused ? colors.primary : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
               }}
@@ -90,7 +95,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
               <Iconify
                 icon={isFocused ? tab.activeIcon : tab.inactiveIcon}
                 size={26}
-                color={isFocused ? WHITE : PRIMARY}
+                color={isFocused ? colors.onPrimary : colors.primary}
               />
             </Pressable>
           );

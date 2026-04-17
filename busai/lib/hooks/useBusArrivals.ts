@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import type { BusArrivalResponse } from "../types";
+import { getSupabase } from "../supabaseClient";
 
-const API_URL = "https://datamall2.mytransport.sg/ltaodataservice/v3/BusArrival";
-const API_KEY = process.env.EXPO_PUBLIC_LTA_DATAMALL_KEY ?? "";
+const LTA_API_URL = "https://datamall2.mytransport.sg/ltaodataservice/v3/BusArrival";
+const LTA_API_KEY = process.env.EXPO_PUBLIC_LTA_DATAMALL_KEY ?? "";
 
 function computeArrivalMinutes(isoString: string): number {
   if (!isoString) return -1;
@@ -22,17 +23,44 @@ function withComputedMinutes(arrival: BusArrivalResponse): BusArrivalResponse {
   };
 }
 
+async function fetchViaSupabase(stopCode: string): Promise<BusArrivalResponse> {
+  const client = getSupabase();
+  if (!client) throw new Error("Supabase not configured");
+
+  const { data, error } = await client.functions.invoke("lta-bus-arrival", {
+    body: { busStopCode: stopCode },
+  });
+
+  if (error) throw new Error(`lta-bus-arrival error: ${error.message}`);
+  if (!data?.ok) throw new Error(`lta-bus-arrival failed: ${data?.error ?? "unknown"}`);
+
+  return withComputedMinutes({
+    BusStopCode: data.BusStopCode ?? stopCode,
+    Services: data.Services ?? [],
+  });
+}
+
+async function fetchViaLtaDirect(stopCode: string): Promise<BusArrivalResponse> {
+  const res = await fetch(`${LTA_API_URL}?BusStopCode=${stopCode}`, {
+    headers: { AccountKey: LTA_API_KEY, accept: "application/json" },
+  });
+  if (!res.ok) throw new Error(`LTA BusArrival error: ${res.status}`);
+  const data: BusArrivalResponse = await res.json();
+  return withComputedMinutes(data);
+}
+
 export function useBusArrivals(stopCode: string) {
+  const hasSupabase = !!getSupabase();
+  const hasLtaKey = !!LTA_API_KEY;
+
   return useQuery<BusArrivalResponse>({
     queryKey: ["busArrivals", stopCode],
-    enabled: !!stopCode && !!API_KEY,
+    enabled: !!stopCode && (hasSupabase || hasLtaKey),
     queryFn: async () => {
-      const res = await fetch(`${API_URL}?BusStopCode=${stopCode}`, {
-        headers: { AccountKey: API_KEY, accept: "application/json" },
-      });
-      if (!res.ok) throw new Error(`LTA BusArrival error: ${res.status}`);
-      const data: BusArrivalResponse = await res.json();
-      return withComputedMinutes(data);
+      if (hasSupabase) {
+        return fetchViaSupabase(stopCode);
+      }
+      return fetchViaLtaDirect(stopCode);
     },
     refetchInterval: 30000,
     staleTime: 25000,
@@ -47,9 +75,9 @@ export function formatArrivalMinutes(minutes: number | undefined): string {
 
 export function getLoadColor(load: string): string {
   switch (load) {
-    case "SEA": return "#22c55e"; // green-500
-    case "SDA": return "#eab308"; // yellow-500
-    case "LSD": return "#ef4444"; // red-500
+    case "SEA": return "#22c55e";
+    case "SDA": return "#eab308";
+    case "LSD": return "#ef4444";
     default: return "#9e9e9e";
   }
 }

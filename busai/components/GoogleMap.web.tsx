@@ -1,9 +1,22 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import { View, type ViewStyle } from "react-native";
 import { GOOGLE_MAPS_API_KEY } from "../lib/mapConfig";
+import { mapPinSvgXml } from "../lib/mapPinSvg";
 
 export type LatLng = { latitude: number; longitude: number };
 export type Region = LatLng & { latitudeDelta: number; longitudeDelta: number };
+
+/** Kept in sync with `GoogleMap.tsx` for consumers that import types from the default path. */
+export type GoogleMapImperativeHandle = {
+  animateToRegion: (region: Region, duration?: number) => void;
+};
 
 export type MapMarker = {
   id: string;
@@ -67,20 +80,49 @@ function toGLatLng(c: LatLng) {
   return { lat: c.latitude, lng: c.longitude };
 }
 
-export default function GoogleMap({
-  style,
-  region,
-  initialRegion,
-  markers = [],
-  polylines = [],
-  circles = [],
-  showsUserLocation = false,
-}: Props) {
+function zoomFromRegion(r: Region): number {
+  return Math.round(Math.log2(360 / (r.longitudeDelta || 0.01)) + 1);
+}
+
+function mapPinIcon(pinColor: string): google.maps.Icon {
+  const url = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(mapPinSvgXml(pinColor))}`;
+  return {
+    url,
+    scaledSize: new google.maps.Size(34, 34),
+    anchor: new google.maps.Point(17, 34),
+  };
+}
+
+const GoogleMap = forwardRef<GoogleMapImperativeHandle, Props>(function GoogleMap(
+  {
+    style,
+    region,
+    initialRegion,
+    markers = [],
+    polylines = [],
+    circles = [],
+    showsUserLocation = false,
+  },
+  ref
+) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const overlaysRef = useRef<(google.maps.Marker | google.maps.Polyline | google.maps.Circle)[]>([]);
   const userMarkerRef = useRef<google.maps.Marker | null>(null);
   const [ready, setReady] = useState(scriptLoaded);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      animateToRegion: (r: Region) => {
+        const m = mapRef.current;
+        if (!m) return;
+        m.panTo(toGLatLng(r));
+        m.setZoom(zoomFromRegion(r));
+      },
+    }),
+    []
+  );
 
   useEffect(() => {
     if (!GOOGLE_MAPS_API_KEY) return;
@@ -95,7 +137,7 @@ export default function GoogleMap({
 
     mapRef.current = new google.maps.Map(containerRef.current, {
       center: toGLatLng(r),
-      zoom: Math.round(Math.log2(360 / (r.longitudeDelta || 0.01)) + 1),
+      zoom: zoomFromRegion(r),
       disableDefaultUI: true,
       zoomControl: true,
       gestureHandling: "greedy",
@@ -126,18 +168,7 @@ export default function GoogleMap({
         position: toGLatLng(m.coordinate),
         map: mapRef.current!,
         title: m.title,
-        ...(m.pinColor
-          ? {
-              icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                fillColor: m.pinColor,
-                fillOpacity: 1,
-                strokeColor: "#ffffff",
-                strokeWeight: 2,
-                scale: 8,
-              },
-            }
-          : {}),
+        ...(m.pinColor ? { icon: mapPinIcon(m.pinColor) } : {}),
       });
       if (m.onPress) gm.addListener("click", m.onPress);
       overlaysRef.current.push(gm);
@@ -208,11 +239,20 @@ export default function GoogleMap({
   }
 
   return (
-    <View style={style}>
+    <View style={[{ position: "relative", overflow: "hidden" }, style]}>
       <div
         ref={containerRef}
-        style={{ width: "100%", height: "100%", borderRadius: "inherit" }}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          borderRadius: "inherit",
+        }}
       />
     </View>
   );
-}
+});
+
+export default GoogleMap;
