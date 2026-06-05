@@ -740,7 +740,7 @@ export default function BusStopDetails() {
           </Pressable>
 
           <View style={{ flex: 1 }}>
-            <Text style={{ fontWeight: "700", fontSize: 18, lineHeight: 24 }} numberOfLines={1}>
+            <Text style={{ fontWeight: "700", fontSize: 18, lineHeight: 24, color: colors.fg }} numberOfLines={1}>
               {stopName}
             </Text>
             <Text

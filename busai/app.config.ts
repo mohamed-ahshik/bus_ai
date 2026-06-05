@@ -23,7 +23,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   android: {
-    package: "com.busai.app",
+    package: "com.mohamedahshik.sgbusflow",
+    versionCode: 4,
     adaptiveIcon: {
       foregroundImage: "./assets/icon.png",
       backgroundColor: "#ffffff",
