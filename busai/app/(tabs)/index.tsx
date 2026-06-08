@@ -281,7 +281,6 @@ export default function NearestBusStops() {
               <Pressable onPress={openSearch}>
                 <Iconify icon="solar:magnifer-linear" size={20} color={colors.mutedFg} />
               </Pressable>
-              <Iconify icon="solar:info-circle-linear" size={20} color={colors.mutedFg} />
             </View>
           </View>
         )}
