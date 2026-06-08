@@ -22,6 +22,7 @@ import { useNearestStops } from "../../lib/hooks/useNearestStops";
 import { usePrefetchNearby } from "../../lib/hooks/usePrefetchNearby";
 import type { BusStop } from "../../lib/types";
 import { getAllBusStops } from "../../lib/api/ltaBusStops";
+import { getServiceNumbers } from "../../lib/api/ltaBusRoutes";
 import { useAppTheme } from "../../lib/ThemeContext";
 import type { AppColors } from "../../lib/theme";
 import { ADMOB_TAB_SCROLL_EXTRA } from "../../lib/adMobConfig";
@@ -149,28 +150,46 @@ export default function NearestBusStops() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [allStops, setAllStops] = useState<BusStop[]>([]);
+  const [serviceNumbers, setServiceNumbers] = useState<string[]>([]);
   const searchInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     getAllBusStops().then(setAllStops).catch(() => {});
   }, []);
 
-  const searchResults = useMemo(() => {
+  type SearchResult =
+    | { type: "stop"; stop: BusStop }
+    | { type: "service"; serviceNo: string };
+
+  const searchResults = useMemo((): SearchResult[] => {
     const q = searchQuery.trim();
     if (!q) return [];
     const lower = q.toLowerCase();
-    return allStops
+
+    const matchedServices = serviceNumbers
+      .filter((s) => s.toLowerCase().startsWith(lower))
+      .slice(0, 5)
+      .map((serviceNo): SearchResult => ({ type: "service", serviceNo }));
+
+    const remainingSlots = 20 - matchedServices.length;
+    const matchedStops = allStops
       .filter(
         (s) =>
           s.BusStopCode.startsWith(q) ||
           s.Description.toLowerCase().includes(lower)
       )
-      .slice(0, 20);
-  }, [searchQuery, allStops]);
+      .slice(0, remainingSlots)
+      .map((stop): SearchResult => ({ type: "stop", stop }));
+
+    return [...matchedServices, ...matchedStops];
+  }, [searchQuery, allStops, serviceNumbers]);
 
   const openSearch = () => {
     setSearchOpen(true);
     setTimeout(() => searchInputRef.current?.focus(), 50);
+    if (serviceNumbers.length === 0) {
+      getServiceNumbers().then(setServiceNumbers).catch(() => {});
+    }
   };
 
   const closeSearch = () => {
@@ -184,6 +203,14 @@ export default function NearestBusStops() {
     router.push({
       pathname: "/stop/[id]",
       params: { id: stop.BusStopCode, name: stop.Description, road: stop.RoadName },
+    });
+  };
+
+  const handleServiceSelect = (serviceNo: string) => {
+    closeSearch();
+    router.push({
+      pathname: "/route/[id]",
+      params: { id: serviceNo },
     });
   };
 
@@ -310,45 +337,85 @@ export default function NearestBusStops() {
             ) : (
               <FlatList
                 data={searchResults}
-                keyExtractor={(s) => s.BusStopCode}
+                keyExtractor={(item) =>
+                  item.type === "stop" ? item.stop.BusStopCode : `svc-${item.serviceNo}`
+                }
                 keyboardShouldPersistTaps="handled"
-                renderItem={({ item, index }) => (
-                  <Pressable
-                    onPress={() => handleStopSelect(item)}
-                    style={({ pressed }) => ({
-                      flexDirection: "row",
-                      alignItems: "center",
-                      paddingHorizontal: 14,
-                      paddingVertical: 12,
-                      gap: 12,
-                      backgroundColor: pressed ? colors.bgSection : colors.surface,
-                      borderTopWidth: index === 0 ? 0 : 1,
-                      borderTopColor: colors.border,
-                    })}
-                  >
-                    <View
-                      style={{
-                        width: 36,
-                        height: 36,
-                        backgroundColor: colors.primary,
-                        borderRadius: 18,
+                renderItem={({ item, index }) =>
+                  item.type === "stop" ? (
+                    <Pressable
+                      onPress={() => handleStopSelect(item.stop)}
+                      style={({ pressed }) => ({
+                        flexDirection: "row",
                         alignItems: "center",
-                        justifyContent: "center",
-                      }}
+                        paddingHorizontal: 14,
+                        paddingVertical: 12,
+                        gap: 12,
+                        backgroundColor: pressed ? colors.bgSection : colors.surface,
+                        borderTopWidth: index === 0 ? 0 : 1,
+                        borderTopColor: colors.border,
+                      })}
                     >
-                      <Iconify icon="solar:bus-bold" size={18} color={colors.onPrimary} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: "700", color: colors.fg }}>
-                        {item.Description}
-                      </Text>
-                      <Text style={{ fontSize: 11, color: colors.mutedFg }}>
-                        {item.BusStopCode} · {item.RoadName}
-                      </Text>
-                    </View>
-                    <Iconify icon="solar:alt-arrow-right-linear" size={16} color={colors.mutedFg} />
-                  </Pressable>
-                )}
+                      <View
+                        style={{
+                          width: 36,
+                          height: 36,
+                          backgroundColor: colors.primary,
+                          borderRadius: 18,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Iconify icon="solar:bus-bold" size={18} color={colors.onPrimary} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: "700", color: colors.fg }}>
+                          {item.stop.Description}
+                        </Text>
+                        <Text style={{ fontSize: 11, color: colors.mutedFg }}>
+                          {item.stop.BusStopCode} · {item.stop.RoadName}
+                        </Text>
+                      </View>
+                      <Iconify icon="solar:alt-arrow-right-linear" size={16} color={colors.mutedFg} />
+                    </Pressable>
+                  ) : (
+                    <Pressable
+                      onPress={() => handleServiceSelect(item.serviceNo)}
+                      style={({ pressed }) => ({
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingHorizontal: 14,
+                        paddingVertical: 12,
+                        gap: 12,
+                        backgroundColor: pressed ? colors.bgSection : colors.surface,
+                        borderTopWidth: index === 0 ? 0 : 1,
+                        borderTopColor: colors.border,
+                      })}
+                    >
+                      <View
+                        style={{
+                          width: 36,
+                          height: 36,
+                          backgroundColor: colors.primary,
+                          borderRadius: 18,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Iconify icon="solar:route-bold" size={18} color={colors.onPrimary} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: "700", color: colors.fg }}>
+                          Bus {item.serviceNo}
+                        </Text>
+                        <Text style={{ fontSize: 11, color: colors.mutedFg }}>
+                          Bus service
+                        </Text>
+                      </View>
+                      <Iconify icon="solar:alt-arrow-right-linear" size={16} color={colors.mutedFg} />
+                    </Pressable>
+                  )
+                }
               />
             )}
           </View>

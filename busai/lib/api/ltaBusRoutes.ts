@@ -111,6 +111,50 @@ export async function getAllRoutes(): Promise<LTARouteRecord[]> {
   return routes;
 }
 
+function sortServiceNumbers(a: string, b: string): number {
+  const aNum = parseInt(a, 10);
+  const bNum = parseInt(b, 10);
+  if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+  if (!isNaN(aNum)) return -1;
+  if (!isNaN(bNum)) return 1;
+  return a.localeCompare(b);
+}
+
+let _serviceNumbersCache: string[] | null = null;
+
+export async function getServiceNumbers(): Promise<string[]> {
+  if (_serviceNumbersCache) return _serviceNumbersCache;
+
+  // Tier 1: Supabase distinct query
+  try {
+    const { data, error } = await supabase
+      .from("bus_routes_compact")
+      .select("service_no");
+    if (!error && data && data.length > 0) {
+      const seen = new Set(data.map((r: { service_no: string }) => r.service_no));
+      _serviceNumbersCache = [...seen].sort(sortServiceNumbers);
+      return _serviceNumbersCache;
+    }
+  } catch {}
+
+  // Tier 2: AsyncStorage cache
+  try {
+    const cached = await AsyncStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const parsed: CachedData = JSON.parse(cached);
+      const seen = new Set(parsed.routes.map((r) => r.ServiceNo));
+      _serviceNumbersCache = [...seen].sort(sortServiceNumbers);
+      return _serviceNumbersCache;
+    }
+  } catch {}
+
+  // Tier 3: fresh fetch
+  const routes = await getAllRoutes();
+  const seen = new Set(routes.map((r) => r.ServiceNo));
+  _serviceNumbersCache = [...seen].sort(sortServiceNumbers);
+  return _serviceNumbersCache;
+}
+
 function buildRouteStops(
   allRoutes: LTARouteRecord[],
   stopMap: Map<string, { Description: string; RoadName: string }>,
