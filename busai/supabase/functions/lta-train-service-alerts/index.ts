@@ -36,8 +36,28 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: false, error: `LTA error: ${res.status}` }, 502);
     }
 
-    const data = (await res.json()) as { value?: unknown[]; Value?: unknown[] };
-    const value = Array.isArray(data.value) ? data.value : Array.isArray(data.Value) ? data.Value : [];
+    const data = (await res.json()) as { value?: unknown; Value?: unknown };
+    const val = data.value ?? data.Value;
+
+    let value: unknown[];
+    if (Array.isArray(val)) {
+      value = val;
+    } else if (val != null && typeof val === "object") {
+      const obj = val as Record<string, unknown>;
+      const messages = obj.Message ?? obj.message;
+      if (Array.isArray(messages)) {
+        const parentStatus = obj.Status ?? obj.status;
+        value = messages.filter((x): x is Record<string, unknown> => x != null && typeof x === "object").map((m) => ({
+          ...m,
+          Status: m.Status ?? m.status ?? parentStatus,
+        }));
+      } else {
+        value = [];
+      }
+    } else {
+      value = [];
+    }
+
     return jsonResponse({ ok: true, value });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);

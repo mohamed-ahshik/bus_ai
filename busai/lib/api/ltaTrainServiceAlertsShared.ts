@@ -14,11 +14,31 @@ function strField(a: TrainServiceAlertRecord, keys: readonly string[]): string {
   return "";
 }
 
+function isRecord(x: unknown): x is Record<string, unknown> {
+  return x != null && typeof x === "object";
+}
+
 export function normalizeTrainAlertsValue(raw: unknown): TrainServiceAlertRecord[] {
   if (!raw || typeof raw !== "object") return [];
-  const o = raw as { value?: unknown[]; Value?: unknown[] };
-  const v = Array.isArray(o.value) ? o.value : Array.isArray(o.Value) ? o.Value : [];
-  return v.filter((x): x is TrainServiceAlertRecord => x != null && typeof x === "object");
+  const o = raw as { value?: unknown; Value?: unknown };
+  const val = o.value ?? o.Value;
+
+  if (Array.isArray(val)) {
+    return val.filter(isRecord);
+  }
+
+  if (isRecord(val)) {
+    const messages = val.Message ?? val.message;
+    if (Array.isArray(messages)) {
+      const parentStatus = val.Status ?? val.status;
+      return messages.filter(isRecord).map((m) => ({
+        ...m,
+        Status: m.Status ?? m.status ?? parentStatus,
+      }));
+    }
+  }
+
+  return [];
 }
 
 /** LTA Status 1 = normal / minor; omit from disruption list when field is present. */
