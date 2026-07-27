@@ -1,7 +1,7 @@
 # Environment variables
 .env
 .env.*
-
+upload_certificate.pem
 # macOS
 .DS_Store
 

@@ -1,9 +1,13 @@
 {
   "expo": {
+    "slug": "busai",
     "extra": {
       "eas": {
-        "projectId": "29ce0e87-a9bc-40fa-9761-e8291eea4ada"
+        "projectId": "810d18c7-1bc4-438f-9502-55e7f04d433b"
       }
+    },
+    "android": {
+      "package": "com.mohamedahshik.busai"
     }
   }
 }
