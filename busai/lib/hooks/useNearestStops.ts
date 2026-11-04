@@ -9,7 +9,11 @@ interface LocationState {
   latitude: number;
   longitude: number;
   address?: string;
+  country?: string;
+  isoCountryCode?: string;
 }
+
+const MAX_NEARBY_DISTANCE_KM = 50;
 
 function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
@@ -28,13 +32,17 @@ async function fetchLocation(): Promise<LocationState> {
   const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
   const { latitude, longitude } = pos.coords;
   let address = "Your Location";
+  let country: string | undefined;
+  let isoCountryCode: string | undefined;
   try {
     const [geo] = await Location.reverseGeocodeAsync({ latitude, longitude });
     if (geo) {
       address = [geo.streetNumber, geo.street].filter(Boolean).join(" ") || geo.name || "Your Location";
+      country = geo.country ?? undefined;
+      isoCountryCode = geo.isoCountryCode ?? undefined;
     }
   } catch {}
-  return { latitude, longitude, address };
+  return { latitude, longitude, address, country, isoCountryCode };
 }
 
 export function useNearestStops() {
@@ -55,6 +63,8 @@ export function useNearestStops() {
         latitude: 1.3521,
         longitude: 103.8198,
         address: "Singapore",
+        country: "Singapore",
+        isoCountryCode: "SG",
       };
       setLocation(fallback);
       return fallback;
@@ -68,7 +78,13 @@ export function useNearestStops() {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         setLocationError("Location permission denied");
-        setLocation({ latitude: 1.3521, longitude: 103.8198, address: "Singapore" });
+        setLocation({
+          latitude: 1.3521,
+          longitude: 103.8198,
+          address: "Singapore",
+          country: "Singapore",
+          isoCountryCode: "SG",
+        });
         return;
       }
       setPermissionGranted(true);
@@ -76,9 +92,18 @@ export function useNearestStops() {
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const isOutsideSingapore = useMemo(() => {
+    if (!location) return false;
+    if (location.isoCountryCode) return location.isoCountryCode !== "SG";
+    return (
+      haversineDistance(location.latitude, location.longitude, 1.3521, 103.8198) >
+      MAX_NEARBY_DISTANCE_KM
+    );
+  }, [location]);
+
   const { data: stops, isLoading, refetch: refetchStops } = useQuery<BusStop[]>({
     queryKey: ["nearestStops", location?.latitude, location?.longitude],
-    enabled: !!location,
+    enabled: !!location && !isOutsideSingapore,
     queryFn: async () => {
       if (!location) return [];
       const fromDb = await fetchNearbyBusStopsFromSupabase(
@@ -87,19 +112,21 @@ export function useNearestStops() {
         80,
       );
       if (fromDb?.length) {
-        return fromDb.map((stop) => ({
-          ...stop,
-          distance:
-            stop.distance ??
-            parseFloat(
-              haversineDistance(
-                location.latitude,
-                location.longitude,
-                stop.Latitude,
-                stop.Longitude,
-              ).toFixed(2),
-            ),
-        }));
+        return fromDb
+          .map((stop) => ({
+            ...stop,
+            distance:
+              stop.distance ??
+              parseFloat(
+                haversineDistance(
+                  location.latitude,
+                  location.longitude,
+                  stop.Latitude,
+                  stop.Longitude,
+                ).toFixed(2),
+              ),
+          }))
+          .filter((stop) => (stop.distance ?? Infinity) <= MAX_NEARBY_DISTANCE_KM);
       }
       const allStops = await getAllBusStops();
       return allStops
@@ -109,6 +136,7 @@ export function useNearestStops() {
             haversineDistance(location.latitude, location.longitude, stop.Latitude, stop.Longitude).toFixed(2)
           ),
         }))
+        .filter((stop) => (stop.distance ?? Infinity) <= MAX_NEARBY_DISTANCE_KM)
         .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
     },
     staleTime: 60000,
@@ -130,7 +158,8 @@ export function useNearestStops() {
     location,
     locationError,
     permissionGranted,
-    isLoading: isLoading || isLocating,
+    isOutsideSingapore,
+    isLoading: !location || isLoading || isLocating,
     refetch,
   };
 }

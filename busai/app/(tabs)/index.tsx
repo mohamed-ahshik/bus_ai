@@ -124,7 +124,8 @@ function BusStopRow({
 export default function NearestBusStops() {
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
-  const { stops, nearestStops, location, isLoading, refetch } = useNearestStops();
+  const { stops, nearestStops, location, isOutsideSingapore, isLoading, refetch } =
+    useNearestStops();
   const mapRef = useRef<GoogleMapImperativeHandle>(null);
   usePrefetchNearby(nearestStops);
 
@@ -300,7 +301,7 @@ export default function NearestBusStops() {
                   {locationAddress}
                 </Text>
                 <Text style={{ fontSize: 11, color: colors.mutedFg, fontWeight: "500" }}>
-                  Singapore
+                  {location?.country || "Singapore"}
                 </Text>
               </View>
             </View>
@@ -484,6 +485,43 @@ export default function NearestBusStops() {
             style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
           >
             <ActivityIndicator color={colors.primary} size="large" />
+          </View>
+        ) : isOutsideSingapore ? (
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              paddingHorizontal: 32,
+              gap: 8,
+            }}
+          >
+            <Text style={{ fontSize: 16, fontWeight: "700", color: colors.fg, textAlign: "center" }}>
+              You're outside Singapore
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.mutedFg, textAlign: "center", lineHeight: 19 }}>
+              SG Bus Flow only shows LTA bus stops in Singapore. Move within Singapore and refresh to see nearby stops.
+            </Text>
+            <Pressable onPress={handleRefresh} style={{ paddingVertical: 10, paddingHorizontal: 16 }}>
+              <Text style={{ fontSize: 13, fontWeight: "700", color: colors.primary }}>Refresh location</Text>
+            </Pressable>
+          </View>
+        ) : nearestStops.length === 0 ? (
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              paddingHorizontal: 32,
+              gap: 8,
+            }}
+          >
+            <Text style={{ fontSize: 16, fontWeight: "700", color: colors.fg, textAlign: "center" }}>
+              No bus stops found nearby
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.mutedFg, textAlign: "center", lineHeight: 19 }}>
+              Try refreshing your location.
+            </Text>
           </View>
         ) : (
           <FlatList

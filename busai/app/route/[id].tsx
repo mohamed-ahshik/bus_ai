@@ -500,7 +500,7 @@ export default function RouteDetails() {
             >
               {activeDirection === 1 ? "Remaining Stops" : "Total Stops"}
             </Text>
-            <Text style={{ fontSize: 13, fontWeight: "700" }}>
+            <Text style={{ fontSize: 13, fontWeight: "700", color: colors.primary }}>
               {activeDirection === 1
                 ? `${stopsFromHere} to ${dir1Terminal}`
                 : `${oppositeStops.length} to ${dir2Terminal}`}
