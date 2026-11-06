@@ -19,8 +19,8 @@ const TABS = [
   },
   {
     name: "map",
-    activeIcon: "solar:map-bold",
-    inactiveIcon: "solar:map-linear",
+    activeIcon: "solar:tram-bold",
+    inactiveIcon: "solar:tram-linear",
   },
   {
     name: "settings",

@@ -50,6 +50,7 @@ module.exports = function (api) {
                 "solar:accessibility-linear",
                 "solar:clock-circle-linear",
                 "solar:tram-bold",
+                "solar:tram-linear",
                 "solar:danger-triangle-bold",
                 "solar:bus-broken",
                 "solar:users-group-rounded-bold",

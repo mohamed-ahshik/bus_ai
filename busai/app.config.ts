@@ -5,7 +5,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: "SG Bus Flow",
   slug: "busai",
   owner: "mohamed-ahshik",
-  version: "1.0.0",
+  version: "1.0.3",
   scheme: "busai",
   orientation: "portrait",
   icon: "./assets/icon.png",
@@ -24,7 +24,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: "com.mohamedahshik.sgbusflow",
-    versionCode: 8,
+    versionCode: 11,
     adaptiveIcon: {
       foregroundImage: "./assets/icon.png",
       backgroundColor: "#ffffff",
