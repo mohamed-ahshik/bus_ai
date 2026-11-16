@@ -1,7 +1,23 @@
 # Environment variables
 .env
 .env.*
+!.env.example
 upload_certificate.pem
+
+# Signing keys / certificates / credentials
+*.jks
+*.keystore
+*.keystore.*
+*.p8
+*.p12
+*.key
+*.pem
+*.cer
+*.der
+*.mobileprovision
+*keystore-credentials*
+*keystore-backup*/
+
 # macOS
 .DS_Store
 

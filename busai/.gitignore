@@ -9,13 +9,17 @@ dist/
 web-build/
 expo-env.d.ts
 
-# Native
+# Native / signing keys
 .kotlin/
 *.orig.*
 *.jks
+*.keystore
 *.p8
 *.p12
 *.key
+*.pem
+*.cer
+*.der
 *.mobileprovision
 
 # Metro
@@ -28,11 +32,16 @@ yarn-error.*
 
 # macOS
 .DS_Store
-*.pem
 
-# local env files
+# local env files (secrets — never commit)
 .env
-.env*.local
+.env.*
+!.env.example
+
+# secrets / credentials
+*.secret
+secrets/
+credentials.json
 
 # typescript
 *.tsbuildinfo
