@@ -1,0 +1,7 @@
+trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign
+T1,08:00:00,08:00:00,S1_A,1,
+T1,08:10:00,08:10:00,S2_A,2,
+T2,08:20:00,08:20:00,S2_B,1,
+T2,08:30:00,08:30:00,S1_B,2,
+T1,25:10:00,25:10:00,S1_A,3,
+T1,25:20:00,25:20:00,S2_A,4,

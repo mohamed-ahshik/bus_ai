@@ -1,0 +1,7 @@
+stop_id,stop_code,stop_name,stop_lat,stop_lon,location_type,platform_code,parent_station
+S1,S1,Station One,1.0,103.0,1,,
+S1_A,S1,Station One,1.0,103.0,0,A,S1
+S1_B,S1,Station One,1.0,103.0,0,B,S1
+S2,S2,Station Two,1.1,103.1,1,,
+S2_A,S2,Station Two,1.1,103.1,0,A,S2
+S2_B,S2,Station Two,1.1,103.1,0,B,S2
