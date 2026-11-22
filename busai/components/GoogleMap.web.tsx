@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { View, type ViewStyle } from "react-native";
 import { GOOGLE_MAPS_API_KEY } from "../lib/mapConfig";
+import { DARK_MAP_STYLE, LIGHT_MAP_STYLE } from "../lib/mapStyle";
 import { mapPinSvgXml } from "../lib/mapPinSvg";
 
 export type LatLng = { latitude: number; longitude: number };
@@ -50,30 +51,54 @@ type Props = {
   circles?: MapCircleData[];
   showsUserLocation?: boolean;
   showsMyLocationButton?: boolean;
+  dark?: boolean;
 };
 
-let scriptLoaded = false;
-let scriptLoading = false;
-const loadCallbacks: (() => void)[] = [];
+function mapStyles(dark: boolean): google.maps.MapTypeStyle[] {
+  return (dark ? DARK_MAP_STYLE : LIGHT_MAP_STYLE) as google.maps.MapTypeStyle[];
+}
+
+let mapsPromise: Promise<void> | null = null;
+
+function googleMapsReady(): boolean {
+  return typeof google !== "undefined" && Boolean(google.maps?.Map);
+}
 
 function loadGoogleMapsScript(): Promise<void> {
-  if (scriptLoaded) return Promise.resolve();
-  return new Promise((resolve) => {
-    loadCallbacks.push(resolve);
-    if (scriptLoading) return;
-    scriptLoading = true;
+  // Fast refresh can reset module state while the API is already on the page.
+  // Never inject a second script: Google Maps throws an internal loader error.
+  if (googleMapsReady()) return Promise.resolve();
+  if (mapsPromise) return mapsPromise;
+
+  mapsPromise = new Promise<void>((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>(
+      'script[src*="maps.googleapis.com/maps/api/js"]',
+    );
+
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener(
+        "error",
+        () => reject(new Error("Could not load Google Maps.")),
+        { once: true },
+      );
+      return;
+    }
 
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=marker`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}`;
     script.async = true;
     script.defer = true;
-    script.onload = () => {
-      scriptLoaded = true;
-      loadCallbacks.forEach((cb) => cb());
-      loadCallbacks.length = 0;
-    };
+    script.dataset.googleMaps = "true";
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Could not load Google Maps."));
     document.head.appendChild(script);
+  }).catch((error) => {
+    mapsPromise = null;
+    throw error;
   });
+
+  return mapsPromise;
 }
 
 function toGLatLng(c: LatLng) {
@@ -102,6 +127,7 @@ const GoogleMap = forwardRef<GoogleMapImperativeHandle, Props>(function GoogleMa
     polylines = [],
     circles = [],
     showsUserLocation = false,
+    dark = false,
   },
   ref
 ) {
@@ -109,7 +135,8 @@ const GoogleMap = forwardRef<GoogleMapImperativeHandle, Props>(function GoogleMa
   const mapRef = useRef<google.maps.Map | null>(null);
   const overlaysRef = useRef<(google.maps.Marker | google.maps.Polyline | google.maps.Circle)[]>([]);
   const userMarkerRef = useRef<google.maps.Marker | null>(null);
-  const [ready, setReady] = useState(scriptLoaded);
+  const [ready, setReady] = useState(googleMapsReady());
+  const [loadError, setLoadError] = useState(false);
 
   useImperativeHandle(
     ref,
@@ -126,7 +153,9 @@ const GoogleMap = forwardRef<GoogleMapImperativeHandle, Props>(function GoogleMa
 
   useEffect(() => {
     if (!GOOGLE_MAPS_API_KEY) return;
-    loadGoogleMapsScript().then(() => setReady(true));
+    loadGoogleMapsScript()
+      .then(() => setReady(true))
+      .catch(() => setLoadError(true));
   }, []);
 
   const r = region ?? initialRegion;
@@ -141,15 +170,17 @@ const GoogleMap = forwardRef<GoogleMapImperativeHandle, Props>(function GoogleMa
       disableDefaultUI: true,
       zoomControl: true,
       gestureHandling: "greedy",
-      styles: [
-        { featureType: "poi", stylers: [{ visibility: "simplified" }] },
-      ],
+      styles: mapStyles(dark),
     });
-  }, [ready, r]);
+  }, [ready, r, dark]);
 
   useEffect(() => {
     initMap();
   }, [initMap]);
+
+  useEffect(() => {
+    mapRef.current?.setOptions({ styles: mapStyles(dark) });
+  }, [dark]);
 
   // Sync region
   useEffect(() => {
@@ -231,7 +262,7 @@ const GoogleMap = forwardRef<GoogleMapImperativeHandle, Props>(function GoogleMa
     };
   }, [ready, showsUserLocation]);
 
-  if (!GOOGLE_MAPS_API_KEY) {
+  if (!GOOGLE_MAPS_API_KEY || loadError) {
     return (
       <View style={[{ backgroundColor: "#e0e0e0", alignItems: "center", justifyContent: "center" }, style]}>
       </View>

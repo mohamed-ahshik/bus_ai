@@ -11,6 +11,7 @@ import MapView, { Marker, Polyline, Circle } from "react-native-maps";
 import type { ReactNode } from "react";
 import { SvgXml } from "react-native-svg";
 import { MAP_PROVIDER } from "../lib/mapConfig";
+import { DARK_MAP_STYLE } from "../lib/mapStyle";
 import { mapPinSvgXml } from "../lib/mapPinSvg";
 
 export type LatLng = { latitude: number; longitude: number };
@@ -56,6 +57,7 @@ type Props = {
   showsMyLocationButton?: boolean;
   fitCoordinates?: LatLng[];
   fitPadding?: { top: number; right: number; bottom: number; left: number };
+  dark?: boolean;
 };
 
 const GoogleMap = forwardRef<GoogleMapImperativeHandle, Props>(function GoogleMap(
@@ -70,6 +72,7 @@ const GoogleMap = forwardRef<GoogleMapImperativeHandle, Props>(function GoogleMa
     showsMyLocationButton = false,
     fitCoordinates,
     fitPadding = { top: 80, right: 40, bottom: 320, left: 40 },
+    dark = false,
   },
   ref
 ) {
@@ -112,6 +115,8 @@ const GoogleMap = forwardRef<GoogleMapImperativeHandle, Props>(function GoogleMa
       region={mapReady ? region : undefined}
       provider={MAP_PROVIDER}
       mapType="standard"
+      customMapStyle={dark ? DARK_MAP_STYLE : undefined}
+      userInterfaceStyle={dark ? "dark" : "light"}
       showsUserLocation={showsUserLocation}
       showsMyLocationButton={showsMyLocationButton}
       onMapReady={handleMapReady}
