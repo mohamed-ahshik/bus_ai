@@ -9,6 +9,7 @@ import { View, Platform, StyleSheet } from "react-native";
 import { ThemeProvider, useAppTheme } from "../lib/ThemeContext";
 import { AppLoadingScreen } from "../components/AppLoadingScreen";
 import { AdMobBanner } from "../components/AdMobBanner";
+import { WEB_SHELL_MAX_WIDTH } from "../lib/layout";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,7 +39,7 @@ function ThemedShell({ children }: { children: React.ReactNode }) {
             style={{
               flex: 1,
               width: "100%",
-              maxWidth: 430,
+              maxWidth: WEB_SHELL_MAX_WIDTH,
               backgroundColor: colors.webChromeInner,
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 0 },

@@ -123,7 +123,7 @@ function BusStopRow({
 
 export default function NearestBusStops() {
   const insets = useSafeAreaInsets();
-  const { colors } = useAppTheme();
+  const { colors, resolvedScheme } = useAppTheme();
   const { stops, nearestStops, location, isOutsideSingapore, isLoading, refetch } =
     useNearestStops();
   const mapRef = useRef<GoogleMapImperativeHandle>(null);
@@ -441,6 +441,7 @@ export default function NearestBusStops() {
             showsUserLocation
             showsMyLocationButton={false}
             markers={mapMarkers}
+            dark={resolvedScheme === "dark"}
           />
 
           <Pressable

@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { getSupabase } from "../supabaseClient";
 import {
   normalizeTrainAlertsValue,
@@ -36,7 +37,13 @@ async function fetchViaLtaDirect(): Promise<TrainServiceAlertRecord[]> {
 
 export async function fetchTrainServiceAlerts(): Promise<TrainServiceAlertRecord[]> {
   if (getSupabase()) {
-    return fetchViaSupabase();
+    try {
+      return await fetchViaSupabase();
+    } catch (error) {
+      // Native can reach DataMall directly; web cannot due CORS.
+      if (Platform.OS !== "web") return fetchViaLtaDirect();
+      throw error;
+    }
   }
   return fetchViaLtaDirect();
 }
